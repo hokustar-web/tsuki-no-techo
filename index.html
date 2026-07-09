@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="月の手帖">
+<meta name="theme-color" content="#FBF8F4">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<title>月の手帖 — 生理記録</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FBF8F4;
+  --card:#FFFFFF;
+  --ink:#40363A;
+  --muted:#9C8F93;
+  --line:#EFE7E2;
+  --rose:#C9637E;
+  --rose-soft:#F6DEE5;
+  --rose-pale:#FAEDF1;
+  --predict:#EBD8DE;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{font-size:16px}
+body{
+  font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+  background:var(--bg);color:var(--ink);
+  padding:max(16px,env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom));
+  max-width:480px;margin:0 auto;
+  font-feature-settings:"palt";
+  line-height:1.6;
+}
+.serif{font-family:"Shippori Mincho","Hiragino Mincho ProN",serif}
+
+header{display:flex;align-items:baseline;justify-content:space-between;padding:8px 4px 20px}
+header h1{font-size:1.15rem;font-weight:600;letter-spacing:.14em}
+header .sub{font-size:.72rem;color:var(--muted);letter-spacing:.08em}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:16px}
+
+/* ---- hero ---- */
+.hero{text-align:center;padding:26px 20px 22px}
+.hero .label{font-size:.75rem;color:var(--muted);letter-spacing:.2em;margin-bottom:2px}
+.hero .big{font-size:1.7rem;font-weight:600;line-height:1.3;color:var(--rose)}
+.hero .big small{font-size:0.95rem;color:var(--ink);font-weight:500;margin-left:2px}
+.hero .date{font-size:.85rem;color:var(--muted);margin-top:4px}
+.hero .stats{display:flex;justify-content:center;gap:28px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.hero .stats div{text-align:center}
+.hero .stats .v{font-size:1.15rem;font-weight:600}
+.hero .stats .k{font-size:.68rem;color:var(--muted);letter-spacing:.1em}
+.hero .note{font-size:.72rem;color:var(--muted);margin-top:14px}
+
+/* ---- calendar ---- */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-head .ym{font-size:1.05rem;font-weight:600;letter-spacing:.08em}
+.cal-head button{
+  border:1px solid var(--line);background:var(--card);color:var(--ink);
+  width:36px;height:36px;border-radius:50%;font-size:1rem;cursor:pointer;
+}
+.cal-head .today-btn{width:auto;border-radius:18px;padding:0 14px;font-size:.78rem;height:36px}
+.dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
+.dow span{text-align:center;font-size:.68rem;color:var(--muted);padding:4px 0;letter-spacing:.1em}
+.dow span:first-child{color:#C77}
+.dow span:last-child{color:#7A9AB8}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);row-gap:6px}
+.cell{position:relative;height:52px}
+.cell .num{
+  position:relative;z-index:2;display:flex;align-items:center;justify-content:center;
+  width:30px;height:30px;margin:2px auto 0;font-size:.85rem;border-radius:50%;
+}
+.cell.dim .num{color:#CFC5C8}
+.cell.today .num{border:1.5px solid var(--rose);font-weight:600}
+.cell .band{position:absolute;top:34px;left:0;right:0;height:12px;z-index:1}
+.band.period{background:var(--rose-soft)}
+.band.period::after{content:"";position:absolute;inset:3px 0;background:var(--rose);opacity:.55}
+.band.b-start{border-radius:8px 0 0 8px;left:6px}
+.band.b-start::after{border-radius:6px 0 0 6px;left:0}
+.band.b-end{border-radius:0 8px 8px 0;right:6px}
+.band.b-end::after{border-radius:0 6px 6px 0;right:0}
+.band.b-start.b-end{border-radius:8px}
+.band.b-start.b-end::after{border-radius:6px}
+.band.predict{background:repeating-linear-gradient(90deg,var(--predict) 0 6px,transparent 6px 10px)}
+.band.predict.b-start{border-radius:8px 0 0 8px;left:6px}
+.band.predict.b-end{border-radius:0 8px 8px 0;right:6px}
+.legend{display:flex;gap:14px;justify-content:center;margin-top:14px;font-size:.7rem;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:18px;height:8px;border-radius:4px;vertical-align:middle;margin-right:5px}
+.legend .l1 i{background:var(--rose);opacity:.6}
+.legend .l2 i{background:repeating-linear-gradient(90deg,var(--predict) 0 5px,transparent 5px 8px)}
+.legend .l3 i{width:11px;height:11px;border-radius:50%;border:1.5px dashed var(--rose);background:none}
+
+/* ---- theme ---- */
+.themes{display:flex;gap:12px;justify-content:flex-end;padding:0 6px 16px}
+.tdot{width:24px;height:24px;border-radius:50%;border:none;cursor:pointer;box-shadow:0 0 0 2px var(--card),0 0 0 3px var(--line)}
+.tdot.sel{box-shadow:0 0 0 2px var(--card),0 0 0 3.5px var(--ink)}
+
+/* ---- ovulation ---- */
+.cell.ovu .num{border:1.5px dashed var(--rose)}
+.cell.today .num{border:1.5px solid var(--rose);font-weight:600}
+
+/* ---- modal ---- */
+.modal{position:fixed;inset:0;background:rgba(64,54,58,.35);display:none;align-items:center;justify-content:center;z-index:100;padding:24px}
+.modal.show{display:flex}
+.mbox{background:var(--card);border-radius:18px;padding:24px 20px;max-width:320px;width:100%}
+.mbox p{font-size:.92rem;margin-bottom:18px;text-align:center}
+
+/* ---- form ---- */
+.form h2,.hist h2{font-size:.8rem;letter-spacing:.18em;color:var(--muted);font-weight:600;margin-bottom:14px}
+.frow{display:flex;gap:10px;margin-bottom:12px}
+.frow label{flex:1;font-size:.72rem;color:var(--muted)}
+.frow input[type=date]{
+  display:block;width:100%;margin-top:4px;padding:10px 12px;font-size:.95rem;
+  border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);
+  font-family:inherit;-webkit-appearance:none;min-height:44px;
+}
+.btns{display:flex;gap:10px}
+button.primary{
+  flex:1;background:var(--rose);color:#fff;border:none;border-radius:12px;
+  padding:13px;font-size:.95rem;font-weight:600;cursor:pointer;letter-spacing:.1em;
+}
+button.ghost{
+  background:none;border:1px solid var(--line);color:var(--muted);border-radius:12px;
+  padding:13px 16px;font-size:.85rem;cursor:pointer;
+}
+button.danger{background:none;border:1px solid #E3B9C2;color:#B4506A;border-radius:12px;padding:13px 16px;font-size:.85rem;cursor:pointer}
+.quick{width:100%;margin-bottom:14px;background:var(--rose-pale);border:1px dashed var(--rose);color:var(--rose);border-radius:12px;padding:12px;font-size:.88rem;cursor:pointer;font-weight:600}
+.hint{font-size:.7rem;color:var(--muted);margin-top:10px}
+
+/* ---- history ---- */
+.hist table{width:100%;border-collapse:collapse;font-size:.88rem}
+.hist th{font-size:.68rem;color:var(--muted);font-weight:500;text-align:left;padding:0 4px 8px;letter-spacing:.08em}
+.hist th:last-child,.hist td:last-child{text-align:right}
+.hist td{padding:11px 4px;border-top:1px solid var(--line)}
+.hist tr.row{cursor:pointer}
+.hist tr.row:active{background:var(--rose-pale)}
+.hist .cyc{font-weight:600}
+.hist td.days,.hist th:nth-child(3){color:var(--muted)}
+.hist td.days{font-size:.78rem;font-variant-numeric:tabular-nums}
+.empty{text-align:center;color:var(--muted);font-size:.85rem;padding:20px 0}
+
+/* ---- backup ---- */
+.backup{display:flex;gap:10px}
+.backup button{flex:1}
+footer{text-align:center;font-size:.68rem;color:var(--muted);margin-top:8px;letter-spacing:.05em}
+
+.toast{
+  position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:#fff;font-size:.82rem;padding:10px 20px;border-radius:20px;
+  opacity:0;transition:.25s;pointer-events:none;white-space:nowrap;z-index:50;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1 class="serif">月の手帖</h1>
+</header>
+<div class="themes" id="themes"></div>
+
+<!-- 予測 -->
+<section class="card hero" id="hero"></section>
+
+<!-- カレンダー -->
+<section class="card">
+  <div class="cal-head">
+    <button id="prevM" aria-label="前の月">‹</button>
+    <span class="ym serif" id="ymLabel"></span>
+    <div style="display:flex;gap:8px">
+      <button class="today-btn" id="todayBtn">今月</button>
+      <button id="nextM" aria-label="次の月">›</button>
+    </div>
+  </div>
+  <div class="dow"><span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span></div>
+  <div class="grid" id="grid"></div>
+  <div class="legend">
+    <span class="l1"><i></i>生理期間</span>
+    <span class="l2"><i></i>生理予測</span>
+    <span class="l3"><i></i>排卵日(推定)</span>
+  </div>
+  <p style="text-align:center;font-size:.68rem;color:var(--muted);margin-top:10px">- 予測・排卵日はあくまで目安です -</p>
+</section>
+
+<!-- 入力 -->
+<section class="card form">
+  <h2 id="formTitle">記録する</h2>
+  <button class="quick" id="quickStart">今日から生理開始</button>
+  <div class="frow">
+    <label>開始日<input type="date" id="inStart"></label>
+    <label>終了日（あとで入力OK）<input type="date" id="inEnd"></label>
+  </div>
+  <div class="btns">
+    <button class="primary" id="saveBtn">保存</button>
+    <button class="ghost" id="cancelBtn" style="display:none">取消</button>
+    <button class="danger" id="delBtn" style="display:none">削除</button>
+  </div>
+  <p class="hint">履歴の行をタップすると編集できます。終了日が未入力の記録は「継続中」として扱います。</p>
+</section>
+
+<!-- 履歴 -->
+<section class="card hist">
+  <h2>履歴</h2>
+  <table>
+    <thead><tr><th>開始日</th><th>終了日</th><th>日数</th><th>周期</th></tr></thead>
+    <tbody id="histBody"></tbody>
+  </table>
+  <div class="empty" id="emptyMsg" style="display:none">まだ記録がありません。<br>上のボタンから最初の記録をつけてみてください。</div>
+</section>
+
+<!-- バックアップ -->
+<section class="card">
+  <h2 style="font-size:.8rem;letter-spacing:.18em;color:var(--muted);font-weight:600;margin-bottom:14px">バックアップ</h2>
+  <div class="backup">
+    <button class="ghost" id="exportBtn">JSONで書き出す</button>
+    <button class="ghost" id="importBtn">JSONを読み込む</button>
+    <input type="file" id="importFile" accept=".json,application/json" style="display:none">
+  </div>
+  <p class="hint">データはこの端末（ブラウザ）の中だけに保存されます。機種変更やブラウザ変更の前に書き出しておくと安心です。</p>
+</section>
+
+<section class="card">
+  <h2 style="font-size:.8rem;letter-spacing:.18em;color:var(--muted);font-weight:600;margin-bottom:12px">計算方法について</h2>
+  <p style="font-size:.78rem;color:var(--muted);line-height:1.9">
+    <b>周期</b>:前回の開始日から今回の開始日までの日数です。<br>
+    <b>次回予測</b>:直近6周期分の平均(四捨五入)を、最新の開始日に足した日です。その先の予測は、平均周期をさらに繰り返し足したもので、カレンダーには6周期先まで表示します。記録が1件の間は仮に28日周期で予測します。<br>
+    <b>排卵推定</b>:次回予測日の14日前です(黄体期を約14日とする一般的な目安)。<br>
+    いずれも実際の体調やホルモンの状態を反映するものではなく、数日ずれることがあります。
+  </p>
+</section>
+
+<div class="modal" id="modal">
+  <div class="mbox">
+    <p id="modalMsg"></p>
+    <div class="btns">
+      <button class="ghost" id="modalNo" style="flex:1">やめる</button>
+      <button class="primary" id="modalYes">OK</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const KEY = "tsukinote-records-v1";
+const THEME_KEY = "tsukinote-theme-v1";
+const DEFAULT_CYCLE = 28;
+const DEFAULT_PERIOD_LEN = 5;
+
+const THEMES = {
+  rose:   {name:"ローズ",  a:"#C9637E", soft:"#F6DEE5", pale:"#FAEDF1", pre:"#EBD8DE"},
+  sumire: {name:"すみれ",  a:"#9678BE", soft:"#E9E0F3", pale:"#F4EFF9", pre:"#E2D8EE"},
+  kohaku: {name:"こはく",  a:"#CE8730", soft:"#F5E3C8", pale:"#FBF1E1", pre:"#EFDFC2"},
+  mizu:   {name:"みず",    a:"#5E8FB8", soft:"#DCE8F2", pale:"#EEF4F9", pre:"#D8E3EE"},
+  wakaba: {name:"わかば",  a:"#679B7C", soft:"#DEEDE4", pale:"#EFF7F2", pre:"#D9E8DF"},
+  sumi:   {name:"すみ",    a:"#5C5A5F", soft:"#E5E3E6", pale:"#F2F1F3", pre:"#DEDCE0"},
+};
+function applyTheme(key){
+  const t = THEMES[key] || THEMES.rose;
+  const r = document.documentElement.style;
+  r.setProperty("--rose", t.a);
+  r.setProperty("--rose-soft", t.soft);
+  r.setProperty("--rose-pale", t.pale);
+  r.setProperty("--predict", t.pre);
+  localStorage.setItem(THEME_KEY, key);
+  document.querySelectorAll(".tdot").forEach(d => d.classList.toggle("sel", d.dataset.key === key));
+}
+function renderThemes(){
+  const wrap = document.getElementById("themes");
+  wrap.innerHTML = Object.entries(THEMES).map(([k,t]) =>
+    `<button class="tdot" data-key="${k}" style="background:${t.a}" aria-label="テーマ:${t.name}"></button>`).join("");
+  wrap.querySelectorAll(".tdot").forEach(d => d.addEventListener("click", () => applyTheme(d.dataset.key)));
+  applyTheme(localStorage.getItem(THEME_KEY) || "rose");
+}
+
+// ---------- date utils (ローカル日付で統一) ----------
+const pD = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const fD = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const addD = (s,n) => { const d = pD(s); d.setDate(d.getDate()+n); return fD(d); };
+const diffD = (a,b) => Math.round((pD(b)-pD(a)) / 86400000);
+const todayS = () => fD(new Date());
+const jDate = s => { const d = pD(s); return `${d.getMonth()+1}/${d.getDate()}(${"日月火水木金土"[d.getDay()]})`; };
+
+// ---------- state ----------
+let records = load();          // [{id, start, end|null}] 常に start 昇順で保持
+let editId = null;
+let view = (() => { const t = new Date(); return {y: t.getFullYear(), m: t.getMonth()}; })();
+
+function load(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(KEY) || "[]");
+    return sortRecs(raw.filter(r => r && r.start));
+  }catch(e){ return []; }
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(records)); }
+function sortRecs(a){ return a.slice().sort((x,y) => x.start < y.start ? -1 : 1); }
+
+// ---------- stats ----------
+function getStats(){
+  const n = records.length;
+  const cycles = [];
+  for(let i = 1; i < n; i++) cycles.push(diffD(records[i-1].start, records[i].start));
+  const recent = cycles.slice(-6);
+  const avgCycle = recent.length ? Math.round(recent.reduce((a,b)=>a+b,0)/recent.length) : DEFAULT_CYCLE;
+
+  const lens = records.filter(r=>r.end).map(r => diffD(r.start, r.end)+1);
+  const recentLens = lens.slice(-6);
+  const avgLen = recentLens.length ? Math.round(recentLens.reduce((a,b)=>a+b,0)/recentLens.length) : DEFAULT_PERIOD_LEN;
+
+  const last = n ? records[n-1] : null;
+  const ongoing = last && !last.end && diffD(last.start, todayS()) < 14;
+  // 予測は6周期先まで(平均周期を繰り返し足す)
+  const nextStarts = last ? [0,1,2,3,4,5].map(k => addD(last.start, avgCycle * (k+1))) : [];
+  const nextStart = nextStarts[0] || null;
+  const ovus = nextStarts.map(ns => addD(ns, -14)); // 各予測日の14日前
+  const ovu = ovus[0] || null;
+  return { avgCycle, avgLen, last, ongoing, nextStart, nextStarts, ovu, ovus, hasCycleData: recent.length > 0 };
+}
+
+// ---------- hero ----------
+function renderHero(){
+  const el = document.getElementById("hero");
+  const s = getStats();
+  if(!s.last){
+    el.innerHTML = `<p class="label">ようこそ</p>
+      <p style="font-size:.9rem;margin-top:8px">最初の記録をつけると、<br>ここに次回の予測が表示されます。</p>`;
+    return;
+  }
+  let main;
+  if(s.ongoing){
+    const day = diffD(s.last.start, todayS()) + 1;
+    main = `<p class="label">生理中</p>
+      <p class="big serif">${day}<small>日目</small></p>
+      <p class="date">${jDate(s.last.start)} 開始 ・ 終わったら終了日を入力してください</p>`;
+  }else{
+    const until = diffD(todayS(), s.nextStart);
+    if(until >= 0){
+      const ovuLine = s.ovu && s.ovu >= todayS() ? `<br>排卵推定 ${jDate(s.ovu)}` : "";
+      const more = s.nextStarts.slice(1, 3).map(jDate).join(" ・ ");
+      main = `<p class="label">次の生理まで</p>
+        <p class="big serif">${until === 0 ? "今日" : `<small>あと</small> ${until}<small>日</small>`}</p>
+        <p class="date">予測日 ${jDate(s.nextStart)}${ovuLine}<br>その先の予測 ${more}</p>`;
+    }else{
+      main = `<p class="label">予測日から</p>
+        <p class="big serif">${-until}<small>日</small></p>
+        <p class="date">予測日 ${jDate(s.nextStart)} を過ぎています</p>`;
+    }
+  }
+  el.innerHTML = main + `
+    <div class="stats">
+      <div><p class="v serif">${s.avgCycle}日</p><p class="k">平均周期</p></div>
+      <div><p class="v serif">${s.avgLen}日</p><p class="k">平均日数</p></div>
+      <div><p class="v serif">${records.length}回</p><p class="k">記録数</p></div>
+    </div>
+    ${s.hasCycleData ? "" : `<p class="note">周期の計算にはあと1回分の記録が必要です（今は仮に${DEFAULT_CYCLE}日で予測しています）</p>`}`;
+}
+
+// ---------- calendar ----------
+function dayStatus(dateS, s){
+  for(const r of records){
+    const end = r.end || (diffD(r.start, todayS()) < 14 ? todayS() : addD(r.start, DEFAULT_PERIOD_LEN-1));
+    if(dateS >= r.start && dateS <= end) return "period";
+  }
+  if(s.nextStarts){
+    for(const ns of s.nextStarts){
+      const pEnd = addD(ns, s.avgLen - 1);
+      if(dateS >= ns && dateS <= pEnd) return "predict";
+    }
+  }
+  return null;
+}
+function renderCal(){
+  const s = getStats();
+  document.getElementById("ymLabel").textContent = `${view.y}年 ${view.m+1}月`;
+  const first = new Date(view.y, view.m, 1);
+  const startOffset = first.getDay();
+  const gridStart = new Date(view.y, view.m, 1 - startOffset);
+  const cells = [];
+  const tS = todayS();
+  for(let i = 0; i < 42; i++){
+    const d = new Date(gridStart); d.setDate(gridStart.getDate() + i);
+    const ds = fD(d);
+    const st = dayStatus(ds, s);
+    const prev = dayStatus(addD(ds,-1), s);
+    const next = dayStatus(addD(ds, 1), s);
+    let band = "";
+    if(st){
+      const cls = [st];
+      if(prev !== st || d.getDay() === 0) cls.push("b-start");
+      if(next !== st || d.getDay() === 6) cls.push("b-end");
+      band = `<div class="band ${cls.join(" ")}"></div>`;
+    }
+    const dim = d.getMonth() !== view.m ? "dim" : "";
+    const today = ds === tS ? "today" : "";
+    const ovu = s.ovus && s.ovus.includes(ds) && st !== "period" ? "ovu" : "";
+    cells.push(`<div class="cell ${dim} ${today} ${ovu}"><div class="num">${d.getDate()}</div>${band}</div>`);
+  }
+  document.getElementById("grid").innerHTML = cells.join("");
+}
+
+// ---------- history ----------
+function renderHist(){
+  const body = document.getElementById("histBody");
+  const empty = document.getElementById("emptyMsg");
+  if(!records.length){ body.innerHTML = ""; empty.style.display = "block"; return; }
+  empty.style.display = "none";
+  const rows = [];
+  for(let i = records.length - 1; i >= 0; i--){
+    const r = records[i];
+    const cyc = i > 0 ? diffD(records[i-1].start, r.start) + "日" : "—";
+    const len = r.end ? `${diffD(r.start, r.end)+1}日間` : "継続中";
+    rows.push(`<tr class="row" data-id="${r.id}">
+      <td>${jDate(r.start)}</td>
+      <td>${r.end ? jDate(r.end) : "〜"}</td>
+      <td class="days">${len}</td>
+      <td class="cyc">${cyc}</td></tr>`);
+  }
+  body.innerHTML = rows.join("");
+  body.querySelectorAll("tr.row").forEach(tr => tr.addEventListener("click", () => startEdit(tr.dataset.id)));
+}
+
+// ---------- form ----------
+const inStart = document.getElementById("inStart");
+const inEnd = document.getElementById("inEnd");
+function startEdit(id){
+  const r = records.find(x => x.id === id);
+  if(!r) return;
+  editId = id;
+  inStart.value = r.start;
+  inEnd.value = r.end || "";
+  document.getElementById("formTitle").textContent = "記録を編集";
+  document.getElementById("cancelBtn").style.display = "";
+  document.getElementById("delBtn").style.display = "";
+  document.querySelector(".form").scrollIntoView({behavior:"smooth", block:"center"});
+}
+function resetForm(){
+  editId = null;
+  inStart.value = ""; inEnd.value = "";
+  document.getElementById("formTitle").textContent = "記録する";
+  document.getElementById("cancelBtn").style.display = "none";
+  document.getElementById("delBtn").style.display = "none";
+}
+function saveRecord(){
+  const start = inStart.value, end = inEnd.value || null;
+  if(!start){ toast("開始日を入力してください"); return; }
+  if(end && end < start){ toast("終了日が開始日より前になっています"); return; }
+  // 重複チェック（編集中の記録は除く）
+  const endEff = end || start;
+  const overlap = records.some(r => {
+    if(r.id === editId) return false;
+    const rEnd = r.end || r.start;
+    return start <= rEnd && endEff >= r.start;
+  });
+  if(overlap){ toast("既存の記録と期間が重なっています"); return; }
+
+  if(editId){
+    const r = records.find(x => x.id === editId);
+    r.start = start; r.end = end;
+  }else{
+    records.push({ id: "r" + Date.now(), start, end });
+  }
+  records = sortRecs(records);
+  save(); resetForm(); renderAll();
+  toast("保存しました");
+}
+function ask(msg, onYes){
+  const m = document.getElementById("modal");
+  document.getElementById("modalMsg").textContent = msg;
+  m.classList.add("show");
+  const yes = document.getElementById("modalYes");
+  const no = document.getElementById("modalNo");
+  const close = () => { m.classList.remove("show"); yes.onclick = no.onclick = null; };
+  yes.onclick = () => { close(); onYes(); };
+  no.onclick = close;
+}
+function deleteRecord(){
+  if(!editId) return;
+  ask("この記録を削除しますか？", () => {
+    records = records.filter(r => r.id !== editId);
+    save(); resetForm(); renderAll();
+    toast("削除しました");
+  });
+}
+
+// ---------- backup ----------
+function exportJSON(){
+  const blob = new Blob([JSON.stringify({app:"tsukinote", exported: todayS(), records}, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `生理記録_${todayS()}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("書き出しました");
+}
+function importJSON(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const data = JSON.parse(reader.result);
+      const arr = Array.isArray(data) ? data : data.records;
+      if(!Array.isArray(arr)) throw 0;
+      const cleaned = arr
+        .filter(r => r && /^\d{4}-\d{2}-\d{2}$/.test(r.start))
+        .map(r => ({ id: r.id || "r" + Math.random().toString(36).slice(2), start: r.start, end: (r.end && /^\d{4}-\d{2}-\d{2}$/.test(r.end)) ? r.end : null }));
+      if(!cleaned.length) throw 0;
+      ask(`${cleaned.length}件の記録を読み込みます。現在のデータは上書きされます。よろしいですか？`, () => {
+        records = sortRecs(cleaned);
+        save(); renderAll();
+        toast("読み込みました");
+      });
+    }catch(e){ toast("ファイルを読み込めませんでした"); }
+  };
+  reader.readAsText(file);
+}
+
+// ---------- misc ----------
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+function renderAll(){ renderHero(); renderCal(); renderHist(); }
+
+// ---------- events ----------
+document.getElementById("saveBtn").addEventListener("click", saveRecord);
+document.getElementById("cancelBtn").addEventListener("click", resetForm);
+document.getElementById("delBtn").addEventListener("click", deleteRecord);
+document.getElementById("quickStart").addEventListener("click", () => {
+  resetForm();
+  inStart.value = todayS();
+  saveRecord();
+});
+document.getElementById("prevM").addEventListener("click", () => { view.m--; if(view.m<0){view.m=11;view.y--;} renderCal(); });
+document.getElementById("nextM").addEventListener("click", () => { view.m++; if(view.m>11){view.m=0;view.y++;} renderCal(); });
+document.getElementById("todayBtn").addEventListener("click", () => { const t=new Date(); view={y:t.getFullYear(),m:t.getMonth()}; renderCal(); });
+document.getElementById("exportBtn").addEventListener("click", exportJSON);
+document.getElementById("importBtn").addEventListener("click", () => document.getElementById("importFile").click());
+document.getElementById("importFile").addEventListener("change", e => {
+  if(e.target.files[0]) importJSON(e.target.files[0]);
+  e.target.value = "";
+});
+
+renderThemes();
+renderAll();
+
+// PWA: Service Worker登録(file://で開いた場合は何もしない)
+if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+}
+</script>
+</body>
+</html>
